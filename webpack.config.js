@@ -1,15 +1,19 @@
+
 var path = require('path');
 var webpack = require('webpack');
 
 module.exports = {
-  context: path.join(__dirname, 'app'),
-  entry: ['./index.html', './app.js'],
+  context: path.resolve(__dirname, 'app'),
+  entry: {
+    javascript: './app.js',
+    html: './index.html'
+  },
   output: {
     path: path.join(__dirname, 'dist'),
-    filename: 'bundle.js'
+    filename: '[name].js'
   },
   module: {
-    loaders: [
+    rules: [
       {
         test: /.js?$/,
         loader: 'babel-loader',
@@ -20,19 +24,38 @@ module.exports = {
       },
       {
         test: /\.html$/,
-        loader: "file-loader?name=[name].[ext]",
+        use: [
+          {
+            loader: "file-loader",
+            options: {
+              name: '[name].[ext]',
+            }
+          }
+        ]
       },
       {
         test: /\.css$/,
-        loader: "style-loader!css-loader"
+        use: [
+          'style-loader',
+          'css-loader'
+        ]
       },
       {
         test: /\.png$/,
-        loader: "url-loader?limit=100000"
+        use: [
+          {
+            loader: "url-loader",
+            options: {
+              limit: 1000,
+            }
+          }
+        ]
       },
       {
         test: /\.jpg$/,
-        loader: "file-loader"
+        use: [
+          { loader: "file-loader" }
+        ]
       }
     ]
   },
