@@ -12,6 +12,7 @@ module.exports = {
     path: path.join(__dirname, 'dist'),
     filename: '[name].js'
   },
+  devtool: 'source-map',
   module: {
     rules: [
       {
@@ -19,7 +20,11 @@ module.exports = {
         loader: 'babel-loader',
         exclude: /node_modules/,
         query: {
-          presets: ['es2015', 'react']
+          presets: ['es2015', 'react', 'stage-2'],
+          // stage-2 has already include class-properties
+          // plugins: [
+          //   'transform-class-properties'
+          // ]
         }
       },
       {
