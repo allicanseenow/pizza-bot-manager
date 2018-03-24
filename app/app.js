@@ -1,24 +1,24 @@
-import React, { Component }       from 'react';
-import ReactDOM                   from 'react-dom';
-import samples                    from './sample-data';
+import React, { Component }                       from 'react';
+import ReactDOM                                   from 'react-dom';
+import { browserHistory, Route, Router, Link }    from 'react-router';
+import samples                                    from './sample-data';
+import Message                                    from './components/Message';
 
 class App extends Component {
   state = {
     "humans": {},
     "stores": {},
-    "selectedConversation": []
   };
 
   loadSampleData = () => {
     this.setState(samples);
-    this.setState({selectedConversation: samples.humans["Rami Sayar"].conversations});
   };
 
-  setSelectedConversation = (human_index) => {
-    this.setState({
-      selectedConversation: this.state.humans[human_index].conversations
-    })
-  };
+  componentWillMount() {
+    if ('human' in this.props.params) {
+      this.loadSampleData();
+    }
+  }
 
   render() {
     return (
@@ -27,10 +27,11 @@ class App extends Component {
         <button onClick={this.loadSampleData}>Load Sample Data</button>
         <div className="container">
           <div className="column">
-            <InboxPane humans={this.state.humans} setSelectedConversation={this.setSelectedConversation} />
+            <InboxPane humans={this.state.humans} />
           </div>
           <div className="column">
-            <ConversationPane conversations={this.state.selectedConversation} />
+            {/*<ConversationPane conversations={this.state.selectedConversation} />*/}
+            {this.props.children || 'Select a Conversation from the Inbox'}
           </div>
           <div className="column">
             <StorePane stores={this.state.stores} />
@@ -43,7 +44,7 @@ class App extends Component {
 
 class InboxPane extends Component {
   renderConvoSum = (human) => {
-    return <InboxItem key={human} index={human} details={this.props.humans[human]} setSelectedConversation={this.props.setSelectedConversation} />;
+    return <InboxItem key={human} index={human} details={this.props.humans[human]} />;
   };
 
   render() {
@@ -77,14 +78,13 @@ class InboxItem extends Component {
     return lastMessage.who + ' said: "' + lastMessage.text + '" @ ' + lastMessage.time.toDateString();
   };
 
-  setSelected = () => {
-    this.props.setSelectedConversation(this.props.index);
-  };
-
   render() {
+    console.log("index ", this.props.index)
+    console.log('encoded index ', encodeURIComponent(this.props.index))
+    console.log('hei ', /conversation/ + encodeURIComponent(this.props.index))
     return (
       <tr>
-        <td><a onClick={this.setSelected}>{this.messageSummary(this.props.details.conversations)}</a></td>
+        <td><Link to={`/conversation/${encodeURI(this.props.index)}`}>{this.messageSummary(this.props.details.conversations)}</Link></td>
         <td>{this.props.index}</td>
         <td>{this.props.details.orders.sort(this.sortByDate)[0].status}</td>
       </tr>
@@ -93,27 +93,33 @@ class InboxItem extends Component {
 }
 
 class ConversationPane extends Component {
-  renderMessage = (val) => {
-    return <Message who={val.who} text={val.text} key={val.time.getTime()} />;
+  loadSampleData = (human) => {
+    this.setState({conversation: samples.humans[human].conversations});
   };
 
+  renderMessage = (conversation) => {
+    return <Message who={conversation.who} text={conversation.text} key={conversation.time.getTime()} />;
+  };
+
+  componentWillMount() {
+    this.loadSampleData(this.props.params.human);
+  }
+
+  componentWillReceiveProps(nextProps) {
+    this.loadSampleData(nextProps.params.human);
+  }
+
   render() {
+    console.log('in convo PANE', this.props.params)
     return (
       <div id="conversation-pane">
         <h1>Conversation</h1>
-        <h3>Select a conversation from the inbox</h3>
+        <h3>{this.props.params.human}</h3>
         <div id="messages">
-          {this.props.conversations.map(this.renderMessage)}
+          {/*{this.props.conversations.map(this.renderMessage)}*/}
+          {this.state.conversation.map(this.renderMessage)}
         </div>
       </div>
-    )
-  }
-}
-
-class Message extends Component {
-  render() {
-    return (
-      <p>{this.props.who} said: "{this.props.text}"</p>
     )
   }
 }
@@ -152,4 +158,11 @@ class Store extends Component {
   }
 }
 
-ReactDOM.render(<App/>, document.getElementById('main'));
+ReactDOM.render(
+  <Router history={browserHistory}>
+    <Route path="/" component={App}>
+      <Route path="/conversation/:human" component={ConversationPane}></Route>
+    </Route>
+  </Router>,
+  document.getElementById('main')
+);
